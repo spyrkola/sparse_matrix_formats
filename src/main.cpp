@@ -24,7 +24,7 @@ void print1Darray(T arr[M]) {
 }
 
 int main() {
-	// ---Sparse Matrix Vector Multiplication---
+	// ---Sparse Matrix Formats---
 	// some dense matrix
 	double denseData[5][5] = {
 		{ 1.0, 0, 0, 2.0, 0 }, 
@@ -36,12 +36,52 @@ int main() {
 
 	std::cout << "---Dense Matrix---\n";
 	print2Darray<5, 5, double>(denseData);
-	
-	// create csr matrix
+
+	// create COO matrix
+	SparseCOO<5, 5, 12, double> cooMatrix(denseData);
+	std::cout << "\n---COO Matrix---\n";
+	std::cout << cooMatrix;
+
+	// create CSR matrix
 	SparseCSR<5, 5, 12, double> csrMatrix(denseData);
 	std::cout << "\n---CSR Matrix---\n";
 	std::cout << csrMatrix;
+
+	// create BSR matrix
+	double denseBlock[4][4] = {
+		{ 1.0, 2.0, 0.0, 0.0 },
+		{ 1.0, 0.0, 0.0, 0.0 }, 
+		{ 0.0, 0.0, 4.0, 5.0 }, 
+		{ 0.0, 0.0, 3.0, 6.0 }
+	};
+	SparseBSR<4, 4, 2, 2, double> bsr(denseBlock);
+	std::cout << "\n---BSR Matrix---\n";
+	std::cout << bsr;
+
+	// create ELL matrix
+	int denseELL[4][4] = {
+		{ 1, 2, 3, 0 },
+		{ 0, 4, 5, 0 }, 
+		{ 0, 6, 0, 7 }, 
+		{ 8, 0, 0, 0 }
+	};
+	SparseELL<4, 4, 3, int> ell(denseELL);
+	std::cout << "\n---ELL Matrix---\n";
+	std::cout << ell;
 	
+	// create TJDS matrix
+	int denseTJDS[5][5] = {
+		{ 1, 2, 0, 3, 0 }, 
+		{ 0, 4, 0, 5, 0 }, 
+		{ 0, 0, 6, 0, 0 }, 
+		{ 0, 0, 7, 8, 0 }, 
+		{ 0, 0, 9, 0, 10 }
+	};
+	SparseTJDS<5, 5, 10, 3, int> tjds(denseTJDS);
+	std::cout << "\n---TJDS Matrix---\n";
+	std::cout << tjds;
+
+	// ---Algorithms---
 	// spMV matrix multiplication with csr sparse matrix
 	double inVector[5] = { 1, 2, 3, 4, 5 };
 	double outVector[5];
