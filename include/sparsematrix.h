@@ -195,20 +195,20 @@ public:
 		for (int j = 0; j < COLS; j++) {
 			int currentRow = 0;
 			for (int i = 0; i < ROWS; i++) {
-				if (denseMatrix[i][j] != 0.0 && currentRow == i) {
-					currentRow += 1;
-				} else if (denseMatrix[i][j] != 0.0 && currentRow < i) {
+				if (denseMatrix[i][j] != 0.0) {
 					denseMatrix[currentRow][j] = denseMatrix[i][j];
-					denseMatrix[i][j] = 0.0;
-					
 					Ids[currentRow][j] = Ids[i][j];
-					Ids[i][j] = -1;
-
 					currentRow += 1;
 				}
 			}
+			
+			while(currentRow < ROWS) {
+				denseMatrix[currentRow][j] = 0.0;
+				Ids[currentRow][j] = -1;
+				currentRow += 1;
+			}
 		}
-				
+		
 		// reorder columns based on number of non-zero elements per column
 		// do this by scanning from bottom to top and from left to right
 		// if you encounter nonzero element in a column, place that column
@@ -219,14 +219,16 @@ public:
 		for (int i = ROWS - 1; i >= 0; i--) {
 			for (int j = sortedCols; j < COLS && sortedCols < COLS - 1; j++) {
 				if (denseMatrix[i][j] != 0.0) {
-					for (int k = 0; k < ROWS; k++) {
-						denseTemp = denseMatrix[k][j];
-						denseMatrix[k][j] = denseMatrix[k][sortedCols];
-						denseMatrix[k][sortedCols] = denseTemp;
-
-						IdsTemp = Ids[k][j];
-						Ids[k][j] = Ids[k][sortedCols];
-						Ids[k][sortedCols] = IdsTemp;	
+					if (sortedCols != j) {
+						for (int k = 0; k < ROWS; k++) {
+							denseTemp = denseMatrix[k][j];
+							denseMatrix[k][j] = denseMatrix[k][sortedCols];
+							denseMatrix[k][sortedCols] = denseTemp;
+	
+							IdsTemp = Ids[k][j];
+							Ids[k][j] = Ids[k][sortedCols];
+							Ids[k][sortedCols] = IdsTemp;	
+						}
 					}
 					sortedCols += 1;
 				}
@@ -240,7 +242,7 @@ public:
 			for (int j = 0; j < COLS; j++) {
 				if (denseMatrix[i][j] != 0.0) {
 					val[nonZeroCount] = denseMatrix[i][j];
-					row_index[nonZeroCount] =  Ids[i][j];
+					row_index[nonZeroCount] = Ids[i][j];
 					nonZeroCount += 1;
 				}
 			}
@@ -307,7 +309,7 @@ std::ostream &operator<<(std::ostream &os, const SparseCSC<ROWS, COLS, NNZ, T> &
 		std::cout << csc.row[i] << " ";
 	}
 	std::cout << "]\ncolptr = [ ";
-	for (int i = 0; i < ROWS + 1; i++) {
+	for (int i = 0; i < COLS + 1; i++) {
 		std::cout << csc.colptr[i] << " ";
 	}
 	std::cout << "]\n";
