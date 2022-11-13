@@ -108,4 +108,26 @@ void createSparseMatTjds(int nnz, int tj_tiles, T mat[M][N]) {
 	}
 }
 
+// generate a random symmetric 2D array for SSS format
+template<int N, int LO, int HI, typename T>
+void createSparseMatSss(int lowerNnz, T mat[N][N]) {
+	// first, fill diagonal with nonzero elements
+	// then, deal with the rest of the array
+	for (int i = 0; i < N; i++) {
+		mat[i][i] = LO + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (HI - LO)));
+	}
+
+	for (int j = 0; j < lowerNnz;) {
+		int index1 = 1 + (int) ((N - 1) * ((double) rand() / (RAND_MAX + 1.0)));
+		int index2 = (int) (index1 * ((double) rand() / (RAND_MAX + 1.0)));
+		if (mat[index1][index2]) {  /* something already at this index */
+			continue;  /*skip incrementing and try again*/
+		}
+		T num = LO + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (HI - LO)));
+		mat[index1][index2] = num;
+		mat[index2][index1] = num;
+		++j;
+	}
+}
+
 #endif // RANDOMMATRIX_H

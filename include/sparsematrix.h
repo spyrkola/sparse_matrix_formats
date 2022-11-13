@@ -182,7 +182,9 @@ public:
 template<int ROWS, int COLS, int NNZ, int TJ_TILES, typename T>
 class SparseTJDS {
 public:
-	SparseTJDS(T denseMatrix[ROWS][COLS]) {
+	// "vector" argument is responsible for reordering an input vector along with elements
+	// during the encoding process. This is useful for SpMV using this format.
+	SparseTJDS(T denseMatrix[ROWS][COLS], T vector[COLS] = NULL) {
 		// create matrix of row indices (use -1 instead of 0 because C++ is 0-based)
 		int Ids[ROWS][COLS];
 		for (int i = 0; i < ROWS; i++) {
@@ -214,6 +216,7 @@ public:
 		// if you encounter nonzero element in a column, place that column
 		// left and increment sortedCols counter
 		T denseTemp;
+		T vectorTemp;
 		int IdsTemp;
 		int sortedCols = 0;
 		for (int i = ROWS - 1; i >= 0; i--) {
@@ -229,6 +232,13 @@ public:
 							Ids[k][j] = Ids[k][sortedCols];
 							Ids[k][sortedCols] = IdsTemp;	
 						}
+						
+						if (vector != NULL) {
+							vectorTemp = vector[j];
+							vector[j] = vector[sortedCols];
+							vector[sortedCols] = vectorTemp;
+						}
+						
 					}
 					sortedCols += 1;
 				}
@@ -254,6 +264,39 @@ public:
 	T val[NNZ];
 	int row_index[NNZ];
 	int start[TJ_TILES + 1];
+};
+
+// Sparse Symmetric Skyline format
+// N: original matrix dimension (same for num. of rows and cols)
+// LOWERNNZ: number of non-zero elements of the lower triangular submatrix
+template<int N, int LOWERNNZ, typename T>
+class SparseSSS{
+public:	
+	SparseSSS(T denseMatrix[N][N]) {
+		// first, store the elements of the main diagonal in dvalues array
+		// then, store lower triangular matrix using the regular CSR format
+		for (int i = 0; i < N; i++) {
+			dvalues[i] = denseMatrix[i][i];
+		}
+
+		rowptr[0] = 0;
+		int countNNZ = 0;
+		for (int i = 0; i < N; i++) {	
+			for (int j = 0; j < i; j++) {
+				if (denseMatrix[i][j] != 0) {
+					values[countNNZ] = denseMatrix[i][j];
+					col[countNNZ] = j;
+					countNNZ += 1;
+				}
+			}
+			rowptr[i + 1] = countNNZ;
+		}
+	}
+
+	T dvalues[N];
+	T values[LOWERNNZ];
+	int rowptr[N + 1];
+	int col[LOWERNNZ];
 };
 
 // some << operator overloads
@@ -367,6 +410,30 @@ std::ostream &operator<<(std::ostream &os, const SparseTJDS<ROWS, COLS, NNZ, TJ_
 	std::cout << "]\nstart = [ ";
 	for (int i = 0; i < TJ_TILES + 1; i++) {
 		std::cout << tjds.start[i] << " ";
+	}
+	std::cout << "]\n";
+
+	return os;
+}
+
+// print sss matrix  using << operator
+template<int N, int LOWERNNZ, typename T>
+std::ostream &operator<<(std::ostream &os, const SparseSSS<N, LOWERNNZ, T> &sss) {
+	std::cout << "dvalues = [ ";
+	for (int i = 0; i < N; i++) {
+		std::cout << sss.dvalues[i] << " ";
+	}
+	std::cout << "]\nvalues = [ ";
+	for (int i = 0; i < LOWERNNZ; i++) {
+		std::cout << sss.values[i] << " ";
+	}
+	std::cout << "]\ncol = [ ";
+	for (int i = 0; i < LOWERNNZ; i++) {
+		std::cout << sss.col[i] << " ";
+	}
+	std::cout << "]\nrowptr = [ ";
+	for (int i = 0; i < N + 1; i++) {
+		std::cout << sss.rowptr[i] << " ";
 	}
 	std::cout << "]\n";
 

@@ -26,122 +26,116 @@ void print1Darray(T arr[M]) {
 }
 
 int main() {
-	// ---Sparse Matrix Formats---
-	/*
-	// known example matrix
-	double denseData[6][6] = {
-		{ 1.0, 0.0, 0.0, 2.0, 0.0, 0.0 }, 
-		{ 3.0, 4.0, 0.0, 5.0, 0.0, 0.0 }, 
-		{ 6.0, 0.0, 7.0, 8.0, 9.0, 0.0 }, 
-		{ 0.0, 0.0, 10.0, 11.0, 0.0, 0.0 }, 
-		{ 0.0, 0.0, 0.0, 0.0, 12.0, 0.0 }, 
-		{ 0.0, 0.0, 0.0, 0.0, 13.0, 14.0 }
-	};
-	
-	std::cout << "---Dense Matrix---\n";
-	print2Darray<6, 6, double>(denseData);
-
-	// create and print all 6 sparse formats
-	SparseCOO<6, 6, 14, double> cooMatrix(denseData);
-	std::cout << "---COO Matrix---\n" << cooMatrix;
-
-	SparseCSR<6, 6, 14, double> csrMatrix(denseData);
-	std::cout << "---CSR Matrix---\n" << csrMatrix;
-	
-	SparseCSC<6, 6, 14, double> cscMatrix(denseData);
-	std::cout << "---CSC Matrix---\n" << cscMatrix;
-
-	SparseBSR<6, 6, 2, 6, double> bsr(denseData);
-	std::cout << "---BSR Matrix---\n" << bsr;
-
-	SparseELL<6, 6, 4, double> ell(denseData);
-	std::cout << "---ELL Matrix---\n" << ell;
-	
-	SparseTJDS<6, 6, 14, 4, double> tjds(denseData);
-	std::cout << "---TJDS Matrix---\n" << tjds;
-	*/	
-
-	// 1) coo, csr, csc formats using createSparseMat()
 	srand(time(NULL));
-	int randomDense[10][7] = {};
-	createSparseMat<10, 7, 1, 9, int>(11, randomDense);
-
-	std::cout << "\n---Random Dense Matrix---\n";
-	print2Darray<10, 7, int>(randomDense);
 	
-	SparseCOO<10, 7, 11, int> cooRandom(randomDense);
-	std::cout << "---COO Matrix---\n" << cooRandom;
-
-	SparseCSR<10, 7, 11, int> csrRandom(randomDense);
-	std::cout << "---CSR Matrix---\n" << csrRandom;
+	// ---Sparse Matrix Vector Multiplication Algorithms
+	std::cout << "======Matrix Vector Multiplication======\n";
+	int vecIn[9] = {}; int vecOut[6] = {};
+	for (int i = 0; i < 9; i++) {
+		vecIn[i] = 1 + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (8)));
+	}
+	std::cout << "Dense Vector: \n";
+	print1Darray<9, int>(vecIn);
 	
-	SparseCSC<10, 7, 11, int> cscRandom(randomDense);
-	std::cout << "---CSC Matrix---\n" << cscRandom;
+	// 1) csr SpMV
+	std::cout << "---CSR SpMV---\n";
+	int denseMat[6][9] = {};
+	createSparseMat<6, 9, 1, 9, int>(7, denseMat);
+	std::cout << "matrix:\n";
+	print2Darray<6, 9, int>(denseMat);
 	
-	// 2) bsr format using createSparseMatBlock()
-	int randomBlockDense[6][18] = {};
-	createSparseMatBlock<6, 18, 2, 1, 9, int>(7, randomBlockDense);
+	SparseCSR<6, 9, 7, int> csrMat(denseMat);
+	spMV(csrMat, vecIn, vecOut);
+	std::cout << "result:\n";
+	print1Darray<6, int>(vecOut);
 	
-	std::cout << "\n---Random Block Dense Matrix---\n";
-	print2Darray<6, 18, int>(randomBlockDense);
+	// 2) ell SpMV
+	std::cout << "---ELL SpMV---\n";
+	int denseEllMat[6][9] = {};
+	createSparseMatEll<6, 9, 1, 9, int>(5, denseEllMat);
+	std::cout << "matrix:\n";
+	print2Darray<6, 9, int>(denseEllMat);
 
-	SparseBSR<6, 18, 2, 7, int> bsrRandom(randomBlockDense);
-	std::cout << "---BSR Matrix---\n" << bsrRandom;
+	SparseELL<6, 9, 5, int> ellMat(denseEllMat);
+	spMV(ellMat, vecIn, vecOut);
+	std::cout << "result:\n";
+	print1Darray<6, int>(vecOut);
+
+	// 3) tjds SpMV
+	// create copy of original input vector for reordering
+	int vecCpy[9];
+	for (int i = 0; i < 9; i++) {
+		vecCpy[i] = vecIn[i];
+	}
+
+	std::cout << "---TJDS SpMV---\n";
+	int denseTjdsMat[6][9] = {};
+	createSparseMatTjds<6, 9, 1, 9, int>(11, 3, denseTjdsMat);
+	std::cout << "matrix:\n";
+	print2Darray<6, 9, int>(denseTjdsMat);
+
+
+	SparseTJDS<6, 9, 11, 3, int> tjdsMat(denseTjdsMat, vecCpy);
+	spMV(tjdsMat, vecCpy, vecOut);
+	std::cout << "results:\n";
+	print1Darray<6, int>(vecOut);
+
+	// 4) sss SpMV
+	int vecOutSym[9];
+	std::cout << "---SSS SpMV---\n";
+	int denseSssMat[9][9] = {};
+	createSparseMatSss<9, 1, 9, int>(7, denseSssMat);
+	std::cout << "matrix:\n";
+	print2Darray<9, 9, int>(denseSssMat);
+
+	SparseSSS<9, 7, int> sssMat(denseSssMat);
+	spMV(sssMat, vecIn, vecOutSym);
+	std::cout << "result:\n";
+	print1Darray<9, int>(vecOutSym);
 	
-	// 3) ell format using createSparseMatEll()
-	int randomEllDense[5][11] = {};
-	createSparseMatEll<5, 11, 1, 9, int>(7, randomEllDense);
+	// ---Sparse Matrix Matrix Multiplication Algorithms---	
+	std::cout << "\n======Matrix Matrix Multiplication======\n";
+	double dense1[5][8] = {};
+	createSparseMat<5, 8, 1, 9, double>(15, dense1);
+
+	double dense2[8][4] = {};
+	createSparseMat<8, 4, 1, 9, double>(7, dense2);
+
+	std::cout << "matrix 1:\n";
+	print2Darray<5, 8, double>(dense1);
+	std::cout << "matrix 2:\n";
+	print2Darray<8, 4, double>(dense2);
 	
-	std::cout << "\n---Random Dense Matrix (for ELL)---\n";
-	print2Darray<5, 11>(randomEllDense);
+	// sparsify dense matrices
+	SparseCSR<5, 8, 15, double> aCSR(dense1);
+	SparseCSC<5, 8, 15, double> aCSC(dense1);
 
-	SparseELL<5, 11, 7, int> ellRandom(randomEllDense);
-	std::cout << "---ELL Matrix---\n" << ellRandom;
+	SparseCSR<8, 4, 7, double> bCSR(dense2);
+	SparseCSC<8, 4, 7, double> bCSC(dense2);
 	
-	// 4) tjds format using createSparseMatTjds()
-	int randomTjdsDense[5][4] = {};
-	createSparseMatTjds<5, 4, 1, 9, int>(10, 4, randomTjdsDense);
-	
-	std::cout << "\n---Random Dense Matrix (for TJDS)---\n";
-	print2Darray<5, 4>(randomTjdsDense);
-
-	SparseTJDS<5, 4, 10, 4, int> tjdsRandom(randomTjdsDense);
-	std::cout << "---TJDS Matrix---\n" << tjdsRandom;
-
-
-	// ---Algorithms---
-	/*
-	// spMV matrix multiplication with csr sparse matrix
-	double inVector[5] = { 1, 2, 3, 4, 5 };
-	double outVector[5];
-	
-	spMV(csrMatrix, inVector, outVector);
-	std::cout << "\n---Sparse Matrix Vector Multiplication (CSR)---\n";
-	print1Darray<5, double>(outVector);
-
-	// ---Sparse Matrix Matrix Multiplication (inner product, csr-csc)---
-	double dense1[3][3] = {
-		{ 1.0, 0.0, 1.2 },
-		{ 0.0, 0.0, 2.0 }, 
-		{ 0.0, 3.0, 0.0 }
-	};
-
-	double dense2[3][3] = {
-		{ 0.0, 2.0, 3.2 }, 
-		{ 1.0, 0.0, 0.0 }, 
-		{ 0.0, 2.2, 0.0 }
-	};
-
-	// sparsify the above dense matrices
-	SparseCSR<3, 3, 4, double> csr(dense1);
-	SparseCSC<3, 3, 4, double> csc(dense2);
-	
-	double denseout[3][3];
-	innerProductSpMM(csr, csc, denseout);
+	// 1) inner product dataflow
+	double denseOutInner[5][4] = { 0.0 };
+	innerProductSpMM(aCSR, bCSC, denseOutInner);
 	std::cout << "\n ---inner product SpMM---\n";
-	std::cout << "result: \n";
-	print2Darray<3, 3, double>(denseout);
-	*/
+	print2Darray<5, 4, double>(denseOutInner);
+	
+	// 2) outer product dataflow
+	double denseOutOuter[5][4] = { 0.0 };
+	outerProductSpMM(aCSC, bCSR, denseOutOuter);
+	std::cout << "---outer product SpMM---\n";
+	print2Darray<5, 4, double>(denseOutOuter);
+	
+	// 3) gustavson product dataflow
+	double denseOutGustavson[5][4] = { 0.0 };
+	gustavsonProductSpMM(aCSR, bCSR, denseOutGustavson);
+	std::cout << "---gustavson product SpMM---\n";
+	print2Darray<5, 4, double>(denseOutGustavson);
+	
+	// 4) column-wise product dataflow
+	double denseOutColumnWise[5][4] = { 0.0 };
+	columnWiseProductSpMM(aCSC, bCSC, denseOutColumnWise);
+	std::cout << "---column-wise product SpMM---\n";
+	print2Darray<5, 4, double>(denseOutColumnWise);
 	
 	return 0;
 }
