@@ -37,6 +37,18 @@ int main() {
 	std::cout << "Dense Vector: \n";
 	print1Darray<9, int>(vecIn);
 	
+	// 0) coo SpMV
+	std::cout << "---COO SpMV---\n";
+	int denseCooMat[6][9] = {};
+	createSparseMat<6, 9, 1, 9, int>(10, denseCooMat);
+	std::cout << "matrix:\n";
+	print2Darray<6, 9, int>(denseCooMat);
+
+	SparseCOO<6, 9, 10, int> cooMat(denseCooMat);
+	spMV(cooMat, vecIn, vecOut);
+	std::cout << "result:\n";
+	print1Darray<6, int>(vecOut);
+	
 	// 1) csr SpMV
 	std::cout << "---CSR SpMV---\n";
 	int denseMat[6][9] = {};
@@ -49,7 +61,19 @@ int main() {
 	std::cout << "result:\n";
 	print1Darray<6, int>(vecOut);
 	
-	// 2) ell SpMV
+	// 2) bsr SpMV
+	std::cout << "---BSR SpMV---\n";
+	int denseBsrMat[6][9] = {};
+	createSparseMatBlock<6, 9, 3, 1, 9, int>(4, denseBsrMat);
+	std::cout << "matrix:\n";
+	print2Darray<6, 9, int>(denseBsrMat);
+	
+	SparseBSR<6, 9, 3, 4, int> bsrMat(denseBsrMat);
+	spMV(bsrMat, vecIn, vecOut);
+	std::cout << "result: \n";
+	print1Darray<6, int>(vecOut);
+	
+	// 3) ell SpMV
 	std::cout << "---ELL SpMV---\n";
 	int denseEllMat[6][9] = {};
 	createSparseMatEll<6, 9, 1, 9, int>(5, denseEllMat);
@@ -61,7 +85,7 @@ int main() {
 	std::cout << "result:\n";
 	print1Darray<6, int>(vecOut);
 
-	// 3) tjds SpMV
+	// 4) tjds SpMV
 	// create copy of original input vector for reordering
 	int vecCpy[9];
 	for (int i = 0; i < 9; i++) {
@@ -80,7 +104,7 @@ int main() {
 	std::cout << "results:\n";
 	print1Darray<6, int>(vecOut);
 
-	// 4) sss SpMV
+	// 5) sss SpMV
 	int vecOutSym[9];
 	std::cout << "---SSS SpMV---\n";
 	int denseSssMat[9][9] = {};

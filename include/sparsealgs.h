@@ -3,6 +3,18 @@
 
 #include "sparsematrix.h"
 
+// multiply COO sparse matrix with dense vector and store results in outVector
+template<int ROWS, int COLS, int NNZ, typename T>
+void spMV(const SparseCOO<ROWS, COLS, NNZ, T> &coo, const T inVector[COLS], T outVector[ROWS]) {
+	for (int i = 0; i < ROWS; i++) {
+		outVector[i] = 0;
+	}
+
+	for (int i = 0; i < NNZ; i++) {
+		outVector[coo.row[i]] += coo.data[i] * inVector[coo.col[i]];
+	}
+}
+
 // multiply CSR sparse matrix with dense vector and store results in outVector
 template<int ROWS, int COLS, int NNZ, typename T> 
 void spMV(const SparseCSR<ROWS, COLS, NNZ, T> &csr, const T inVector[COLS], T outVector[ROWS]) {
@@ -12,6 +24,25 @@ void spMV(const SparseCSR<ROWS, COLS, NNZ, T> &csr, const T inVector[COLS], T ou
 			dot += csr.data[j] * inVector[csr.col[j]];
 		}
 		outVector[i] = dot;
+	}
+}
+
+// multiply BSR sparse matrix with dense vector
+template<int ROWS, int COLS, int BLOCKSIZE, int NNZBLOCKS, typename T>
+void spMV(const SparseBSR<ROWS, COLS, BLOCKSIZE, NNZBLOCKS, T> &bsr, const T inVector[COLS], T outVector[ROWS]) {
+	
+	for (int i = 0; i < ROWS; i++) {
+		outVector[i] = 0;
+	}
+
+	for (int i = 0; i < ROWS / BLOCKSIZE; i++) {
+		for (int j = bsr.blockRowptr[i]; j < bsr.blockRowptr[i + 1]; j++) {
+			for (int k = j * BLOCKSIZE * BLOCKSIZE; k < (j + 1) * BLOCKSIZE * BLOCKSIZE; k++) {
+				int col = bsr.blockCol[j] * BLOCKSIZE + k % BLOCKSIZE;
+				int row = i * BLOCKSIZE + k % (BLOCKSIZE * BLOCKSIZE) / BLOCKSIZE;
+				outVector[row] += bsr.data[k] * inVector[col];
+			}
+		}
 	}
 }
 
